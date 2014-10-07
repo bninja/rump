@@ -49,6 +49,7 @@ setuptools.setup(
     tests_require=extras_require['tests'],
     packages=setuptools.find_packages('.', exclude=('test',)),
     scripts=['bin/rump', 'bin/rumpd'],
+    include_package_data=True,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

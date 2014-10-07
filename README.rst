@@ -16,7 +16,7 @@ dev
 
 .. code:: bash
 
-   $ git clone git@github.com:balanced/rump.git
+   $ git clone git@github.com:bninja/rump.git
    $ cd rump
    $ mkvirtualenv rump
    (rump)$ pip install -e .[tests]
