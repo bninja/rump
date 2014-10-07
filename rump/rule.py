@@ -69,7 +69,7 @@ class CompiledRule(object):
         return self.upstream if matched else None
 
     def __str__(self):
-        return '{} => {}'.format(str(self.expression), str(self.upstream))
+        return '{0} => {1}'.format(str(self.expression), str(self.upstream))
 
     def __eq__(self, other):
         return (

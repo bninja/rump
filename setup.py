@@ -5,7 +5,7 @@ import sys
 
 install_requires = [
     'netaddr >=0.7,<0.8',
-    'pilo >=0.5,<0.6',
+    'pilo >=0.5.1,<0.6',
     'pyparsing >=2.0.1,<3.0',
 ]
 if sys.version_info[0:2] < (2, 7):
