@@ -78,7 +78,8 @@ def parser(log_level=None, conf_file=None):
         '-v', '--version',
         action='version',
         default=argparse.SUPPRESS,
-        version="show program's version number and exit",
+        version=rump.__version__,
+        help="show program's version number and exit",
     )
 
     commands = parser.add_subparsers(title='commands')
