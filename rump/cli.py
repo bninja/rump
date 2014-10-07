@@ -64,15 +64,21 @@ def parser(log_level=None, conf_file=None):
         '-d', '--dynamic',
         action='store_true',
         default=False,
-        help='Load dynamic router configurations.',
+        help='load dynamic router configurations.',
     )
     root.set_defaults(setup=setup)
     root.set_defaults(settings=None)
     root.set_defaults(auto_load_settings=True)
 
     parser = argparse.ArgumentParser(
-        version=rump.__version__,
         parents=[root],
+
+    )
+    parser.add_argument(
+        '-v', '--version',
+        action='version',
+        default=argparse.SUPPRESS,
+        version="show program's version number and exit",
     )
 
     commands = parser.add_subparsers(title='commands')
@@ -308,7 +314,7 @@ def show_parser(commands, parents):
         description='Show router.',
     )
     command.add_argument(
-        'name', help='Router name.',
+        'name', help='router name.',
     )
     command.set_defaults(command=show_command)
     return command
@@ -326,10 +332,10 @@ def edit_parser(commands, parents):
         description='Edit router dynamic configuration.',
     )
     command.add_argument(
-        'name', help='Router name.',
+        'name', help='router name',
     )
     command.add_argument(
-        'file', nargs='?', help='File to read from.',
+        'file', nargs='?', help='file to read from',
     )
     command.set_defaults(command=edit_command)
     return command
@@ -353,7 +359,7 @@ def check_parser(commands, parents):
         description="Checks a router's configuration.",
     )
     command.add_argument(
-        'name', help='Router name.',
+        'name', help='router name',
     )
     command.set_defaults(command=check_command)
     command.set_defaults(auto_load_settings=False)
@@ -372,17 +378,17 @@ def watch_parser(commands, parents):
         description='Watch router for changes.',
     )
     command.add_argument(
-        'names', nargs='*', help='Router names.',
+        'names', nargs='*', help='router names',
     )
     command.add_argument(
         '-n', '--notifications',
         type=int,
-        help='Exit after this many notifications.',
+        help='exit after this many notifications',
     )
     command.add_argument(
         '-t', '--timeout',
         type=int,
-        help='Exit after this many seconds.',
+        help='exit after this many seconds',
     )
     command.set_defaults(command=watch_command)
     return command
@@ -408,7 +414,7 @@ def upstream_parser(commands, parents):
         description='Evalulate HTTP requests for upstream.',
     )
     command.add_argument(
-        'names', nargs='?', help='Router names.',
+        'names', nargs='?', help='router names',
     )
     command.add_argument(
         '-r', '--requests',
@@ -440,7 +446,7 @@ def serve_parser(commands, parents):
         description='Serve upstream selection.',
     )
     command.add_argument(
-        'names', nargs='?', help='Router names.',
+        'names', nargs='?', help='router names',
     )
     command.add_argument(
         '--host', default='127.0.0.1',

@@ -74,7 +74,7 @@ class Settings(pilo.Form):
                     with self.ctx.reset():
                         router = load_router(config_parser, section, file_path)
                     routers.append(router)
-        return routers
+        return sorted(routers, key=lambda router: router.name)
 
     @classmethod
     def from_file(cls, file_path, section=None, names=None):
