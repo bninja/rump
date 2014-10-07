@@ -12,6 +12,35 @@ logger = logging.getLogger(__name__)
 
 
 class Settings(pilo.Form):
+    """
+    Router settings read from ini-style configuration files. Typically used like:
+
+    .. code:: python
+
+        settings = rump.Settings.from_file('~/.rump/rump.conf',)
+        print settings
+
+    which might look like:
+
+    .. code:: ini
+
+        [rump]
+        includes = ./*.conf
+
+        [router1]
+        hosts = google\.
+        default_upstream = https://www.google.com
+
+        [router2]
+        hosts = yahoo\.
+        default_upstream = https://www.yahoo.com
+        dynamic = redis
+
+        [router2:redis]
+        key = test-router2
+        channel = test-router2
+
+    """
 
     #: Look for routers in these files or globs.
     includes = pilo.fields.List(pilo.fields.String())
@@ -102,6 +131,16 @@ class Settings(pilo.Form):
 
 
 def load_router(config_parser, section, file_path=None):
+    """
+    Loads one router from an ini-style configuration file(s).
+
+    :param config_parser: Parsed ini-style configuration file(s).
+    :param section: Section to read router from. This also the **name** of the
+                    router.
+    :param file_path: Optional location of ini-style configuration file which
+                      is helpful for showing source of validation errors.
+    :return: The router (typically an instance of ``rump.Router``).
+    """
     # probe
 
     dynamics = []

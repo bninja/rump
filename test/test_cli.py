@@ -6,7 +6,7 @@ import pytest
 import requests
 import time
 
-from rump import cli, Settings
+from rump import dumps, cli, Settings
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ def test_show(capsys, parser):
     cli.setup(args)
     args.command(args)
     out, err = capsys.readouterr()
-    assert out == cli.dump(args.settings.routers[0]) + '\n'
+    assert out == dumps(args.settings.routers[0]) + '\n'
     assert err == ''
 
 

@@ -1,7 +1,12 @@
 """
+All types supported by:
+
+- matching expressions (see `rump.exp`) and
+- computed by request fields (see ``rump.request``)
+
 """
-import pilo
 import netaddr
+import pilo
 
 
 __all__ = [
@@ -16,28 +21,16 @@ __all__ = [
     'ArgumentHash',
 ]
 
-
-#:
 int = int
 
-
-#:
 str = str
 
-
-#:
 bool = bool
 
-
-#:
 NamedTuple = pilo.Form
 
-
-#:
 IPAddress = netaddr.IPAddress
 
-
-#:
 IPNetwork = netaddr.IPNetwork
 
 
@@ -55,6 +48,7 @@ class Hash(dict):
 
 class StringHash(Hash):
     """
+    ``Hash`` specialization to have **string** keys.
     """
 
     pass
@@ -62,6 +56,8 @@ class StringHash(Hash):
 
 class HeaderHash(StringHash):
     """
+    A specialization of a string hash expected to have **header** keys (e.g.
+    insensitive to case).
     """
 
     pass
@@ -69,6 +65,9 @@ class HeaderHash(StringHash):
 
 class ArgumentHash(StringHash):
     """
+    A specialization of a string hash expected to have argument keys (e.g. for
+    representing query strings, application/x-www-form-urlencoded content,
+    etc).
     """
 
     pass

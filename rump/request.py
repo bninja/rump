@@ -1,5 +1,3 @@
-"""
-"""
 import base64
 import copy
 import inspect
@@ -13,8 +11,24 @@ from . import Expression, exp, types
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    'PathMixin',
+    'String',
+    'Boolean',
+    'Integer',
+    'IPAddress',
+    'IPNetwork',
+    'NamedTuple'
+    'StringHash',
+    'ArgumentHash',
+    'HeaderHash',
+]
+
 
 class PathMixin(object):
+    """
+    Mix-in for adding `.path` property to a field.
+    """
 
     @property
     def path(self):
@@ -22,6 +36,10 @@ class PathMixin(object):
 
 
 class BooleanMixin(Expression):
+    """
+    Mix-in for adding boolean expression capabilities to a field with type
+    ``rump.type.bool``.
+    """
 
     inv = False
 
@@ -70,6 +88,10 @@ class BooleanSubField(BooleanMixin, exp.SubField):
 
 
 class StringMixin(object):
+    """
+    Mix-in for adding string expression capabilities to a field with type
+    ``rump.type.str``.
+    """
 
     def __eq__(self, other):
         return exp.FieldEqual(self, other)
@@ -108,6 +130,10 @@ class StringSubField(exp.SubField, StringMixin):
 
 
 class IntegerMixin(object):
+    """
+    Mix-in for adding integer expression capabilities to a field with type
+    ``rump.type.int``.
+    """
 
     def __eq__(self, other):
         return exp.FieldEqual(self, other)
@@ -246,22 +272,60 @@ class BasicAuthorization(types.NamedTuple):
 
 class Request(pilo.Form):
     """
-    `environ`
+    Defines a request schema as collections of fields:
 
-    `router`
+    - ``rump.request.String``
+    - ``rump.request.Integer`
+    - ``rump.request.NamedTuple``
+    - ...
+
+    all of which parse or compute values that one of these ``rump.types``. If
+    you need to add custom fields just:
+
+    .. code:: python
+
+        import rump
+
+        class MyRequest(rump.Request)
+
+            x_sauce = rump.request.String('HTTP_X_SAUCE', default='blue')
+
+            env = rump.request.String()
+
+            @env.compute
+            def env(self)
+                if not self.authorized or not self.password:
+                    return 'public'
+                return self.password.split('-')[0]
+
+    which can then be used in matching expressions:
+
+    .. code:: python
+
+        print rump._and(MyRequest.x_sauce.in_(['mayo', 'ketchup']), MyRequest.env != 'open')
 
     """
 
     def __init__(self, environ, router=None):
+        """
+        :param environ: The WSGI environment for the request. This will be
+                        wrapped and stored as `src`.
+        :param router: Optional `Router` examining this request. This can be
+                       useful when fields uses `Router` information when
+                       computing a value.
+        """
         super(Request, self).__init__()
         self.src = pilo.source.DefaultSource(environ)
         self.router = router
 
     def context(self, symbols):
         """
-        :param symbols:
+        Creates a context for this request to be used when evaluating a
+        **compiled** rule.
 
-        :return:
+        :param symbols: An instance of `exp.Symbols`.
+
+        :return: The `exp.Context` for this request.
         """
         return exp.Context(self, symbols)
 

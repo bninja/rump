@@ -1,5 +1,3 @@
-"""
-"""
 import errno
 import logging
 import pprint
@@ -10,7 +8,7 @@ import wsgiref.simple_server
 
 import pilo
 
-from . import __version__, parser, exc, Upstream, Router
+from . import __version__, parser, exc, Upstream, Router, dumps
 
 
 __all__ = [
@@ -77,9 +75,9 @@ class Request(pilo.Form):
     @classmethod
     def read(cls, io):
         """
-        :param io:
+        Generator used to parse and yield HTTP requests from file-like object.
 
-        :return:
+        :param io: File-like object to read HTTP requests from
         """
 
         class _Server(wsgiref.simple_server.WSGIServer):
@@ -140,6 +138,22 @@ class _Application(threading.local):
 
     #: Local wrapper for request being handled now.
     request = None
+
+    def setup(self):
+        for router in self.settings.routers:
+            if router.is_dynamic:
+                router.connect()
+                router.watch(self.changed)
+
+    def teardown(self):
+        for router in self.settings.routers:
+            if router.is_connected:
+                router.disconnect()
+
+    def changed(self, router):
+        logger.info('router %s changes, reloading ...', router.name)
+        router.load()
+        logger.info('%s', dumps(router))
 
     def router_for(self, request=None):
         request = self.request if request is None else request

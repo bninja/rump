@@ -1,7 +1,12 @@
 """
+Commands for interacting w/ a rump install. These are exposed by bin/rump, so:
+
+.. code:: bash
+
+    $ rump --help
+
 """
 import argparse
-import json
 import logging
 import os
 import pprint
@@ -20,8 +25,6 @@ import rump
 
 __all__ = [
     'parser',
-    'load',
-    'dump',
 ]
 
 
@@ -126,26 +129,6 @@ def setup(args):
                     router.load()
 
 
-def load(text):
-    return json.loads(text)
-
-
-def dump(obj):
-
-    def _default(obj):
-        if isinstance(obj, (rump.Upstream, rump.Rule, rump.Rule.compiled_type)):
-            return str(obj)
-        if isinstance(obj, rump.Rules):
-            return list(obj)
-        if hasattr(obj, 'pattern'):
-            return obj.pattern
-        if obj in (rump.Request,):
-            return '{0}:{1}'.format(obj.__module__, obj.__name__)
-        raise TypeError(repr(obj) + ' is not JSON serializable')
-
-    return json.dumps(obj, indent=4, default=_default)
-
-
 def router_with_name(routers, name):
     for router in routers:
         if router.name == name:
@@ -177,7 +160,7 @@ def edit(router, io=None):
         logger.debug('using editor - %s', editor)
 
         # existing
-        text = dump(router.filter('dynamic'))
+        text = rump.dumps(router.filter('dynamic'))
         raw_fd, raw_path = tempfile.mkstemp(prefix='rump-')
         ctime = os.stat(raw_path).st_mtime
         with os.fdopen(raw_fd, 'w') as raw_fo:
@@ -323,7 +306,7 @@ def show_parser(commands, parents):
 
 def show_command(args):
     router = router_with_name(args.settings.routers, args.name)
-    print dump(router)
+    print rump.dumps(router)
 
 
 def edit_parser(commands, parents):
@@ -472,6 +455,7 @@ def serve_command(args):
         else args.settings.routers
     )
     rump.wsgi.app.settings.map({'routers': routers})
+    rump.wsgi.app.setup()
 
     mode = None
     if args.forking:
@@ -480,5 +464,8 @@ def serve_command(args):
         mode = 'thread'
     server = server_for(host=args.host, port=args.port, mode=mode,)
     logger.info('serving on {0}:{1} ...'.format(*server.server_address))
-    server.serve_forever()
-    logger.info('exited')
+    try:
+        server.serve_forever()
+    finally:
+        logger.info('exited')
+        rump.wsgi.app.teardown()

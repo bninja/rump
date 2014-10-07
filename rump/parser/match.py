@@ -1,4 +1,5 @@
 """
+PyParsing grammar for matching expression DSL.
 """
 import inspect
 import logging

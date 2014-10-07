@@ -1,4 +1,5 @@
 """
+PyParsing grammar for upstream DSL.
 """
 from pyparsing import *
 

@@ -1,3 +1,6 @@
+"""
+PyParsing grammar for rule DSL.
+"""
 from pyparsing import *
 
 from . import upstream

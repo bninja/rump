@@ -1,4 +1,20 @@
 """
+Expression language for representing matches. Other than these helpers:
+
+- or_
+- and_
+- not_
+
+you usually never need to access anything in here directly but instead via
+``rump.Request`` fields, e.g.:
+
+.. code:: python
+
+    assert isinstance(
+        rump.Request.path.startwith('/v1/'),
+        rump.exp.FieldStartswith
+    )
+
 """
 import collections
 import copy
@@ -34,6 +50,7 @@ __all__ = [
 
 class Context(dict):
     """
+    Context used when evaluating a **compiled** expression.
     """
 
     class Cache(collections.defaultdict):
@@ -57,6 +74,7 @@ class Context(dict):
 
 class Symbols(dict):
     """
+    Collection of symbols used when evaluating a **compiled** expression.
     """
 
     def field(self, f):
@@ -74,6 +92,7 @@ class Symbols(dict):
 
 class Expression(object):
     """
+    Base expression.
     """
 
     def __and__(self, other):

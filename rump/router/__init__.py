@@ -1,5 +1,3 @@
-"""
-"""
 import contextlib
 import logging
 import re
@@ -14,25 +12,38 @@ logger = logging.getLogger(__name__)
 
 class Dynamic(pilo.Form):
     """
+    Represents the dynamic components:
+
+    - settings and
+    - selection rules
+
+    of a ``rump.Router``.U seful if you want to centrally control (e.g. in
+    zookeeper, redis, postgresql, etc) those aspects upstream selection.
     """
 
+    #: A string identifying the type of dynamic (e.g. "redis", "zookeeper", etc).
     _type_ = pilo.fields.Type.abstract()
 
     def can_connect(self, router):
         """
-        :return:
+        :param router: The ``rump.Router`` associated with this dynmaic.
+        :return: True if it can connect, otherwise False.
         """
         raise NotImplementedError
 
     def connect(self, router):
         """
-        :param router:
+        Connect to dynamic.
+
+        :param router: The ``rump.Router`` associated with this dynmaic.
         """
         raise NotImplementedError
 
     def is_connected(self, router):
         """
-        :param router:
+        Check if connected to dynamic.
+
+        :param router: The ``rump.Router`` associated with this dynmaic.
 
         :return:
         """
@@ -40,32 +51,47 @@ class Dynamic(pilo.Form):
 
     def disconnect(self, router):
         """
-        :param router:
+        Disconnect from dynamic.
+
+        :param router: The ``rump.Router`` associated with this dynmaic.
         """
         raise NotImplementedError
 
     def load(self, router, cxn):
         """
-        :param router:
+        Load remote dynamic settings.
+
+        :param router: The ``rump.Router`` associated with this dynmaic.
         """
         raise NotImplementedError
 
     def save(self, router, cxn):
         """
-        :param router:
+        Save local changes to remote dynamic.
+
+        :param router: The ``rump.Router`` associated with this dynmaic.
         """
         raise NotImplementedError
 
     def watch(self, router, callback):
         """
-        :param router:
-        :param callback:
+        Watch for changes and invoke `callback` for `router` when the occur.
+
+        :param router: The ``rump.Router`` associated with this dynmaic.
+        :param callback: Callback taking `router` as its single argument.
         """
         raise NotImplementedError
 
 
 class Router(pilo.Form):
     """
+    Encapsulates:
+
+    - settings (e.g. `Router.host`)
+    - request schema (i.e. `Router.request_type`)
+    - upstream selection  rules (e.g. `Router.rules`, `Router.overrides`)
+
+    and a dynamic (i.e. `Router.dynamic`) for remote control.
     """
 
     #: Name of this router
@@ -189,8 +215,11 @@ class Router(pilo.Form):
 
     def match_me(self, request):
         """
-        :param request:
-        :return:
+        Should this router do upstream selection for `request`?
+
+        :param request: The request (e.g. ``rump.wsgi.Request``) to evaluate.
+
+        :return: True if it should, otherwise False.
         """
         for host in self.hosts:
             m = host.match(request.host)
@@ -199,8 +228,11 @@ class Router(pilo.Form):
 
     def match_upstream(self, request):
         """
-        :param request:
-        :return:
+        Determines the ``rump.Upstream` for a `request`.
+
+        :param request: An instance of `Router.request_type` to evaluate.
+
+        :return: ``rump.Upstream` selected or None if there is none.
         """
         return (
             self.overrides.match(request) or

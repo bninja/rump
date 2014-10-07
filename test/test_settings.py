@@ -1,6 +1,6 @@
 import pytest
 
-from rump import Settings, cli
+from rump import Settings, loads, dumps
 
 
 @pytest.fixture
@@ -12,7 +12,7 @@ def test_load(settings_path):
     settings = Settings.from_file(str(settings_path))
     assert len(settings.routers) == 3
     routers = sorted(settings.routers, key=lambda router: router.name)
-    assert cli.load(cli.dump(routers)) == [{
+    assert loads(dumps(routers)) == [{
             'name': 'router1',
             'compile_rules': True,
             'rules': [],
@@ -73,7 +73,7 @@ def test_load(settings_path):
 
 def test_load_one(settings_path):
     settings = Settings.from_file(str(settings_path), names=['router3'])
-    assert cli.load(cli.dump(settings.routers)) == [{
+    assert loads(dumps(settings.routers)) == [{
         'name': 'router3',
         'compile_rules': False,
         'rules': [

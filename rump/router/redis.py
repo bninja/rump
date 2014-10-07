@@ -89,6 +89,7 @@ class Redis(Dynamic):
         return pilo.source.UnionSource(srcs)
 
     def _get(self, router):
+        logger.info('getting key %s', self.key)
         return self._cli.get(self.key)
 
     def _set(self, router):
@@ -104,7 +105,7 @@ class Redis(Dynamic):
 
         dynamic = router.filter('dynamic')
         text = json.dumps(dynamic, indent=4, default=_encode)
-        logger.info('setting key %s', self.key)
+        logger.info('setting key %s\n%s', self.key, text)
         self._cli.set(self.key, text)
 
         logger.info('publishing to channel %s', self.channel)
