@@ -20,4 +20,4 @@ dev
    $ cd rump
    $ mkvirtualenv rump
    (rump)$ pip install -e .[tests]
-   (rump)$ py.test tests/ --cov=rump --cov-report term-missing
+   (rump)$ py.test test/ --cov=rump --cov-report term-missing
