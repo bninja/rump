@@ -1,9 +1,13 @@
 """
 """
-import collections
 import inspect
 import logging
 import re
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 from pyparsing import *
 
@@ -318,7 +322,7 @@ def field_exprs(*fields):
             if _match(candidate, target):
                 return bucket
 
-    keywords = collections.OrderedDict([
+    keywords = OrderedDict([
         (types.bool, ([], bool_expr)),
         (types.str, ([], str_expr)),
         (types.int, ([], int_expr)),

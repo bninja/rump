@@ -1,5 +1,6 @@
 import re
 import setuptools
+import sys
 
 
 install_requires = [
@@ -7,6 +8,8 @@ install_requires = [
     'pilo >=0.5,<0.6',
     'pyparsing >=2.0.1,<3.0',
 ]
+if sys.version_info[0:2] < (2, 7):
+    install_requires.append('ordereddict')
 
 extras_require = {
     'kazoo': ['kazoo >=1.3.1,<2.0'],
