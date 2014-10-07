@@ -11,7 +11,7 @@ install:
 - pip install -e .[tests]
 - pip install coveralls
 script:
-- py.test tests/ --cov=rump --cov-report term-missing
+- py.test test/ --cov=rump --cov-report term-missing
 after_success:
 - coveralls
 deploy:
