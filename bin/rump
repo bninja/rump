@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+"""
+Command line interface for interacting with a rump install:
+
+.. code:: bash
+
+    $ rump --help
+
+"""
+import rump
+
+
+def main():
+    parser = rump.cli.parser(**rump.cli.env())
+    args = parser.parse_args()
+    rump.cli.setup(args)
+    args.command(args)
+
+
+if __name__ == '__main__':
+    main()
