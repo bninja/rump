@@ -1,14 +1,31 @@
+"""
+Example WSGI application showing remote integration for:
+
+- nginx `X-Accel-* <http://wiki.nginx.org/X-accel>`_
+- ...
+
+If you installed rump you can just do:
+
+.. code:: bash
+
+    $ rump serve -ld
+
+"""
 import errno
 import logging
+import netaddr
+import os
 import pprint
 import socket
 import StringIO
 import threading
 import wsgiref.simple_server
 
+import coid
+import ohmr
 import pilo
 
-from . import __version__, parser, exc, Upstream, Router, dumps
+import rump
 
 
 __all__ = [
@@ -18,18 +35,16 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
+tracer = ohmr.Tracer(coid.Id(prefix='ohm-', encoding='base58'))
+
 
 class Request(pilo.Form):
 
-    def __init__(self, environ, id_header=None):
+    def __init__(self, environ, id_header):
         super(Request, self).__init__()
         self.environ = environ
         self.src = pilo.source.DefaultSource(environ)
-        self.id_header = (
-            'HTTP_' + id_header.upper().replace('-', '_')
-            if id_header is not None
-            else None
-        )
+        self.id_header = 'HTTP_' + id_header.upper().replace('-', '_')
 
     host = pilo.fields.String('HTTP_HOST')
 
@@ -39,17 +54,11 @@ class Request(pilo.Form):
 
     query_string = pilo.fields.String('QUERY_STRING')
 
-    id = pilo.fields.String(default=None)
+    id = pilo.fields.String(default=lambda: tracer.id)
 
     @id.resolve
     def id(self):
-        return self.ctx(src=self.id_header) if self.id_header else None
-
-    @id.parse
-    def id(self, path):
-        if self.id_header is None:
-            return pilo.NONE
-        return path.primitive(None)
+        return self.ctx(src=self.id_header)
 
     echo = pilo.fields.Boolean('HTTP_X_RUMP_ECHO', default=False)
 
@@ -60,12 +69,12 @@ class Request(pilo.Form):
     @default_upstream.parse
     def default_upstream(self, path):
         value = path.primitive()
-        if isinstance(value, Upstream):
+        if isinstance(value, rump.Upstream):
             return value
-        parse = parser.for_upstream()
+        parse = rump.parser.for_upstream()
         try:
             return parse(value)
-        except exc.ParseException, ex:
+        except rump.exc.ParseException, ex:
             self.ctx.errors.invalid(str(ex))
 
     forwards = pilo.fields.String('HTTP_X_RUMP_FORWARD', default=None)
@@ -109,20 +118,63 @@ class Request(pilo.Form):
                 break
             dummy.parse_request()
             environ = dummy.get_environ()
-            request = cls(environ)
+            request = cls(environ, app.settings.id_header)
             yield request
 
 
 class Settings(pilo.Form):
 
+    def from_file(self, path):
+        logger.info('loading settings from %s', path)
+        src = pilo.source.union([
+            pilo.source.ConfigSource.from_file(path, 'rump:wsgi'),
+            {'routers': rump.Settings.from_file(path, 'rump').routers},
+            self,
+        ])
+        settings = type(self)(src)
+        self.update(settings)
+        logger.debug('loaded settings\n%s', rump.dumps(settings))
+        return settings
+
+    def from_env(self):
+        file_path = os.getenv('RUMP_CONF_FILE')
+        if not file_path:
+            logger.info('no settings @ RUMP_CONF_FILE=')
+            for file_path in ['./rump.conf', '~/.rump', '/etc/rump/rump.conf']:
+                file_path = os.path.abspath(file_path)
+                if os.path.isfile(file_path):
+                    break
+                logger.info('no settings @ %s', file_path)
+            else:
+                file_path = None
+        if file_path is None:
+            raise LookupError('Unable to locate settings file')
+        return self.from_file(file_path)
+
     #: Id header (e.g. X-MyOrg-Id).
-    id_header = pilo.fields.String(default=None)
+    id_header = pilo.fields.String(default='X-Rump-Id')
 
     #: Path to health file.
     health_file = pilo.fields.String(default=None)
 
     #: List of routers.
-    routers = pilo.fields.List(pilo.fields.SubForm(Router), default=list)
+    routers = pilo.fields.List(pilo.fields.SubForm(rump.Router), default=list)
+
+    #: List of proxy CIDRs.
+    proxies = pilo.fields.List(pilo.fields.String(), default=list)
+
+    @proxies.field.validate
+    def proxies(self, value):
+        try:
+            netaddr.IPNetwork(value)
+        except (netaddr.AddrFormatError,), ex:
+            self.errors.invalid(str(ex))
+            return False
+        return True
+
+    @proxies.field.munge
+    def proxies(self, value):
+        return netaddr.IPNetwork(value)
 
 
 class _Application(threading.local):
@@ -140,20 +192,24 @@ class _Application(threading.local):
     request = None
 
     def setup(self):
+        logger.info('setup')
         for router in self.settings.routers:
             if router.is_dynamic:
+                logger.info('connecting %s', router.name)
                 router.connect()
                 router.watch(self.changed)
 
     def teardown(self):
+        logger.info('teardown')
         for router in self.settings.routers:
             if router.is_connected:
+                logger.info('disconnecting %s', router.name)
                 router.disconnect()
 
     def changed(self, router):
-        logger.info('router %s changes, reloading ...', router.name)
+        logger.info('%s changed, reloading ...', router.name)
         router.load()
-        logger.info('%s', dumps(router))
+        logger.info('%s', rump.dumps(router))
 
     def router_for(self, request=None):
         request = self.request if request is None else request
@@ -181,9 +237,8 @@ class _Application(threading.local):
                 ('Content-Type', 'text/plain'),
                 ('Content-Length', str(len(body))),
             ]
-        if self.request.id is not None:
-            headers.append((self.settings.id_header, self.request.id))
-        headers.append(('X-Rump-Version', __version__))
+        headers.append((self.settings.id_header, self.request.id.encode('utf-8')))
+        headers.append(('X-Rump-Version', rump.__version__))
         start_response(status, headers)
         self.request = None
         return body

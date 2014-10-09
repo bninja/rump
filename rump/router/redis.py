@@ -1,12 +1,11 @@
 from __future__ import absolute_import
 
-import json
 import logging
 
 import pilo
 import redis
 
-from .. import Upstream, Rule, Rules
+from .. import dumps, loads
 from . import Dynamic
 
 
@@ -26,13 +25,16 @@ class Redis(Dynamic):
     #: Store key.
     key = pilo.fields.String()
 
+    #: Number of seconds between each watch.
+    watch_timeout = pilo.fields.Float(default=1.0)
+
     # Dynamic
 
     def can_connect(self, router):
         return True
 
     def connect(self, router):
-        logger.info('connecting to %s ...', self.url)
+        logger.info('connecting to %s', self.url)
         cli = redis.Redis.from_url(self.url)
         pubsub = cli.pubsub()
         self._cli, self._pubsub, self._subthd = cli, pubsub, None
@@ -65,7 +67,9 @@ class Redis(Dynamic):
             self.channel: lambda message: callback(router)
         })
         if self._subthd is None or not self._subthd.active():
-            self._subthd = self._pubsub.run_in_thread(sleep_time=0.1)
+            self._subthd = self._pubsub.run_in_thread(
+                sleep_time=self.watch_timeout,
+            )
 
     # internals
 
@@ -81,30 +85,21 @@ class Redis(Dynamic):
         # remote
         text = self._get(router)
         if text is not None:
-            srcs.append(pilo.source.JsonSource(text, location=self.key))
+            srcs.append(pilo.source.DefaultSource(text, location=self.key))
 
         # local
         srcs.append(router)
 
-        return pilo.source.UnionSource(srcs)
+        return pilo.source.union(srcs)
 
     def _get(self, router):
         logger.info('getting key %s', self.key)
-        return self._cli.get(self.key)
+        text = self._cli.get(self.key)
+        return loads(text) if text is not None else None
 
     def _set(self, router):
-
-        def _encode(obj):
-            if isinstance(obj, (Upstream, Rule, Rule.compiled_type)):
-                return str(obj)
-            if isinstance(obj, Rules):
-                return list(obj)
-            if hasattr(obj, 'pattern'):
-                return obj.pattern
-            raise TypeError(repr(obj) + ' is not JSON serializable')
-
         dynamic = router.filter('dynamic')
-        text = json.dumps(dynamic, indent=4, default=_encode)
+        text = dumps(dynamic)
         logger.info('setting key %s\n%s', self.key, text)
         self._cli.set(self.key, text)
 

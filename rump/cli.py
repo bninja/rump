@@ -71,7 +71,6 @@ def parser(log_level=None, conf_file=None):
     )
     root.set_defaults(setup=setup)
     root.set_defaults(settings=None)
-    root.set_defaults(auto_load_settings=True)
 
     parser = argparse.ArgumentParser(
         parents=[root],
@@ -282,7 +281,7 @@ def list_parser(commands, parents):
         parents=parents,
         description='List routers.',
     )
-    command.set_defaults(command=list_command)
+    command.set_defaults(command=list_command, auto_load_settings=True)
     return command
 
 
@@ -300,7 +299,7 @@ def show_parser(commands, parents):
     command.add_argument(
         'name', help='router name.',
     )
-    command.set_defaults(command=show_command)
+    command.set_defaults(command=show_command, auto_load_settings=True)
     return command
 
 
@@ -321,7 +320,7 @@ def edit_parser(commands, parents):
     command.add_argument(
         'file', nargs='?', help='file to read from',
     )
-    command.set_defaults(command=edit_command)
+    command.set_defaults(command=edit_command, auto_load_settings=True)
     return command
 
 
@@ -345,8 +344,7 @@ def check_parser(commands, parents):
     command.add_argument(
         'name', help='router name',
     )
-    command.set_defaults(command=check_command)
-    command.set_defaults(auto_load_settings=False)
+    command.set_defaults(command=check_command, auto_load_settings=False)
     return command
 
 
@@ -374,7 +372,7 @@ def watch_parser(commands, parents):
         type=int,
         help='exit after this many seconds',
     )
-    command.set_defaults(command=watch_command)
+    command.set_defaults(command=watch_command, auto_load_settings=True)
     return command
 
 
@@ -405,7 +403,7 @@ def upstream_parser(commands, parents):
         default='-',
         help='HTTP requests FILE, or - to read from stdin',
     )
-    command.set_defaults(command=eval_command)
+    command.set_defaults(command=eval_command, auto_load_settings=True)
     return command
 
 
@@ -436,7 +434,7 @@ def serve_parser(commands, parents):
         '--host', default='127.0.0.1',
     )
     command.add_argument(
-        '-p', '--port', type=int, default=8080,
+        '-p', '--port', type=int, default=4114,
     )
     command.add_argument(
         '-f', '--forking', action='store_true', default=False,
@@ -444,17 +442,13 @@ def serve_parser(commands, parents):
     command.add_argument(
         '-t', '--threading', action='store_true', default=False,
     )
-    command.set_defaults(command=serve_command)
+    command.set_defaults(command=serve_command, auto_load_settings=False)
     return command
 
 
 def serve_command(args):
-    routers = (
-        [router_with_name(args.settings.routers, name) for name in args.names]
-        if args.names
-        else args.settings.routers
-    )
-    rump.wsgi.app.settings.map({'routers': routers})
+    if args.conf_file is not None:
+        rump.wsgi.app.settings.from_file(args.conf_file)
     rump.wsgi.app.setup()
 
     mode = None

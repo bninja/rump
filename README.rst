@@ -36,14 +36,14 @@ done 99% of the time.
 This is an **experiment** to see what writing a Python based HTTP upstream
 selector would look like and what flexibility that gives you.
 
-Use it as a ``program`` or emded it as a ``lib`` in your proxy.
+Use it as a ``program`` or embed it as a ``lib`` in your proxy.
 
 program
 =======
 
 Install it:
 
-- `ansible-rump <https://github.com/bninja/ansible-rump>`_.
+- `ansible-rump <https://github.com/bninja/ansible-rump>`_
 - ...
 
 Use it:

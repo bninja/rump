@@ -120,7 +120,9 @@ def loads(text):
 def dumps(obj):
 
     def _default(obj):
-        if isinstance(obj, (Upstream, Rule, Rule.compiled_type)):
+        if isinstance(obj, (
+               Upstream, Rule, Rule.compiled_type, types.IPNetwork
+           )):
             return str(obj)
         if isinstance(obj, Rules):
             return list(obj)
@@ -142,8 +144,6 @@ from .upstream import Upstream, Selection, Server
 from . import parser
 from . import router
 from .router import Router, Dynamic
-
-
 from .settings import Settings
 from . import cli
 from . import wsgi

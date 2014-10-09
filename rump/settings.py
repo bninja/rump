@@ -98,7 +98,9 @@ class Settings(pilo.Form):
                     if main and main == section:
                         continue
                     if names and section not in names:
-                        logger.debug('skipping router %s from %s', file_path)
+                        logger.debug(
+                            'skipping router %s from %s', section, file_path
+                        )
                         continue
                     with self.ctx.reset():
                         router = load_router(config_parser, section, file_path)

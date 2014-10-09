@@ -1,4 +1,5 @@
 import json
+import os
 import StringIO
 import time
 import uuid
@@ -10,19 +11,25 @@ from rump import Router, exc
 
 def pytest_generate_tests(metafunc):
     if 'router_dynamic' in metafunc.fixturenames:
-        metafunc.parametrize('router_dynamic', [
-            {
-                '_type_': 'zookeeper',
-                'hosts': ['localhost'],
-                'timeout': 5,
-                'root': '/{0}'.format(router_name),
-            },
-            {
-                '_type_': 'redis',
-                'key': 'rump-{0}'.format(router_name),
-                'channel': 'rump-{0}'.format(router_name),
-            },
-        ])
+        name = 'test-{0}'.format(uuid.uuid4().hex)
+        dynamics = []
+        dynamics.append({
+            '_type_': 'zookeeper',
+            'hosts': ['localhost'],
+            'timeout': 5,
+            'root': '/{0}'.format(name),
+        })
+        dynamics.append({
+            '_type_': 'redis',
+            'key': 'rump-{0}'.format(name),
+            'channel': 'rump-{0}'.format(name),
+        })
+        if os.getenv('RUMP_TEST_ETCD'):
+            dynamics.append({
+                '_type_': 'etcd',
+                'key': '/rump/{0}'.format(name),
+            })
+        metafunc.parametrize('router_dynamic', dynamics)
 
 
 @pytest.fixture
@@ -141,7 +148,7 @@ def test_save(router):
 def test_watch(request, router):
 
     notifications = []
-    notification_delay = 1.0
+    notification_delay = 2.0
     router_copy = type(router)(router)
     router_copy.connect()
     request.addfinalizer(router_copy.disconnect)

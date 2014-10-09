@@ -5,15 +5,19 @@ import sys
 
 install_requires = [
     'netaddr >=0.7,<0.8',
-    'pilo >=0.5.1,<0.6',
+    'pilo >=0.5.2,<0.6',
     'pyparsing >=2.0.1,<3.0',
+    'coid >=0.1,<0.2',
+    'ohmr >=0.1,<0.2',
+    'wsgim-rip >=0.1,<0.2',
 ]
 if sys.version_info[0:2] < (2, 7):
     install_requires.append('ordereddict')
 
 extras_require = {
     'kazoo': ['kazoo >=1.3.1,<2.0'],
-    'redis': ['redis'],
+    'redis': ['redis >=2.10,<3'],
+    'etcd': ['python-etcd >=0.3,<0.4'],
     'gunicorn': [
         'gevent ==1.0',
         'gunicorn',

@@ -117,6 +117,7 @@ def test_select_xaccel_default_upstream(server):
     headers = resp.headers.copy()
     headers.pop('server')
     headers.pop('date')
+    headers.pop('x-test-id')
     assert headers == {
         'content-length': '0',
         'x-rump-forward': 'https://dev.here.com',
@@ -140,6 +141,7 @@ def test_select_xaccel_echo(server):
     headers = resp.headers.copy()
     headers.pop('server')
     headers.pop('date')
+    headers.pop('x-test-id')
     assert headers == {
         'content-length': '25',
         'x-rump-forward': 'http://cache.one.internal.com',

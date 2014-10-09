@@ -285,9 +285,14 @@ class Router(pilo.Form):
 
 
 try:
+    from .etcd import EtcD
+except ImportError, ex:
+    logger.info('etcd dynamic unavailable - %s', ex)
+
+try:
     from .redis import Redis
 except ImportError, ex:
-    logger.info('redis  dynamic unavailable - %s', ex)
+    logger.info('redis dynamic unavailable - %s', ex)
 
 try:
     from .zookeeper import Zookeeper
